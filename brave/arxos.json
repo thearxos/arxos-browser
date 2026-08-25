@@ -1,0 +1,51 @@
+{
+  "_comment": "ARXOS hardened + debloated Brave defaults (global managed policy). Kills Leo AI, Rewards, Wallet, VPN, crypto, news/shopping bloat, and all telemetry; keeps Tor + Shields.",
+
+  "BraveRewardsDisabled": true,
+  "BraveWalletDisabled": true,
+  "BraveVPNDisabled": true,
+  "BraveAIChatEnabled": false,
+  "BraveTalkDisabled": true,
+  "TorDisabled": false,
+
+  "MetricsReportingEnabled": false,
+  "UrlKeyedAnonymizedDataCollectionEnabled": false,
+  "CloudReportingEnabled": false,
+  "FeedbackSurveysEnabled": false,
+  "BackgroundModeEnabled": false,
+  "PromotionalTabsEnabled": false,
+  "MediaRecommendationsEnabled": false,
+  "ShoppingListEnabled": false,
+  "NTPCardsVisible": false,
+  "NTPBackgroundImagesEnabled": false,
+  "NTPCustomBackgroundEnabled": false,
+
+  "BlockThirdPartyCookies": true,
+  "DefaultCookiesSetting": 4,
+  "SafeBrowsingProtectionLevel": 1,
+  "SafeBrowsingExtendedReportingEnabled": false,
+  "SafeBrowsingSurveysEnabled": false,
+  "PasswordManagerEnabled": false,
+  "AutofillAddressEnabled": false,
+  "AutofillCreditCardEnabled": false,
+  "PaymentMethodQueryEnabled": false,
+  "SearchSuggestEnabled": false,
+  "AlternateErrorPagesEnabled": false,
+  "SpellCheckServiceEnabled": false,
+
+  "NetworkPredictionOptions": 2,
+  "DnsOverHttpsMode": "secure",
+  "DnsOverHttpsTemplates": "https://dns.quad9.net/dns-query",
+  "HttpsOnlyMode": "force_enabled",
+  "WebRtcIPHandling": "default_public_interface_only",
+
+  "HomepageLocation": "file:///usr/share/arxos/browser/welcome.html",
+  "HomepageIsNewTabPage": false,
+  "ShowHomeButton": true,
+  "RestoreOnStartup": 4,
+  "RestoreOnStartupURLs": ["file:///usr/share/arxos/browser/welcome.html"],
+
+  "DefaultSearchProviderEnabled": true,
+  "DefaultSearchProviderName": "DuckDuckGo",
+  "DefaultSearchProviderSearchURL": "https://duckduckgo.com/?q={searchTerms}"
+}

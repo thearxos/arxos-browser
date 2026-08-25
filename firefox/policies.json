@@ -1,0 +1,45 @@
+{
+  "policies": {
+    "DisableTelemetry": true,
+    "DisableFirefoxStudies": true,
+    "DisablePocket": true,
+    "DisableFormHistory": true,
+    "DisableSetDesktopBackground": true,
+    "DontCheckDefaultBrowser": true,
+    "NoDefaultBookmarks": true,
+    "OfferToSaveLogins": false,
+    "PasswordManagerEnabled": false,
+    "NetworkPrediction": false,
+    "SearchSuggestEnabled": false,
+    "EnableTrackingProtection": {
+      "Value": true, "Locked": true,
+      "Cryptomining": true, "Fingerprinting": true, "EmailTracking": true
+    },
+    "Cookies": { "Behavior": "reject-tracker-and-partition-foreign" },
+    "FirefoxHome": {
+      "Search": true, "TopSites": false, "SponsoredTopSites": false,
+      "Highlights": false, "Pocket": false, "SponsoredPocket": false,
+      "Snippets": false, "Locked": true
+    },
+    "Homepage": { "URL": "file:///usr/share/arxos/browser/welcome.html", "StartPage": "homepage" },
+    "UserMessaging": {
+      "WhatsNew": false, "ExtensionRecommendations": false,
+      "FeatureRecommendations": false, "UrlbarInterventions": false, "SkipOnboarding": true
+    },
+    "OverrideFirstRunPage": "",
+    "OverridePostUpdatePage": "",
+    "HttpsOnlyMode": "enabled",
+    "PostQuantumKeyAgreementEnabled": true,
+    "DNSOverHTTPS": { "Enabled": true, "ProviderURL": "https://dns.quad9.net/dns-query" },
+    "ExtensionSettings": {
+      "uBlock0@raymondhill.net": {
+        "installation_mode": "normal_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
+      }
+    },
+    "SearchEngines": {
+      "Default": "DuckDuckGo",
+      "PreventInstalls": false
+    }
+  }
+}
