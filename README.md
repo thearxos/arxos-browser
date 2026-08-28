@@ -25,3 +25,9 @@ HTTPS-only, DoH/Quad9, WebRTC IP-leak protection, DuckDuckGo. Extra launch flags
 ```
 sudo ./install.sh
 ```
+
+---
+
+<div align="center">
+<sub><b>arxos-browser-dist</b> is part of the <b>ArxOS</b> project, built by <b>Stingray Labs</b>.</sub>
+</div>
