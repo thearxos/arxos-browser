@@ -71,6 +71,38 @@ if [ -d /home/arxos/.config ]; then
   chown arxos:arxos /home/arxos/.config/brave-flags.conf
 fi
 
+# ---- one re-apply entry point ----
+# A single command that re-applies every browser's hardening, for the Control Center's
+# Privacy panel and for anyone who wants to re-assert it after touching browser settings
+# by hand. Idempotent: it writes the same policy/pref files this installer just wrote.
+install -Dm755 /dev/stdin /usr/lib/arxos/harden-browsers.sh <<'HB'
+#!/bin/bash
+# Re-apply ARXOS browser hardening (Firefox, Waterfox, Brave) from the installed sources.
+set -u
+S=/usr/share/arxos/browser
+did=0
+if [ -d /usr/lib/firefox ] && [ -f "$S/firefox/arxos.cfg" ]; then
+  install -Dm644 "$S/firefox/policies.json" /etc/firefox/policies/policies.json 2>/dev/null
+  cp -f "$S/firefox/arxos.cfg" /usr/lib/firefox/arxos.cfg
+  install -Dm644 "$S/firefox/autoconfig.js" /usr/lib/firefox/defaults/pref/autoconfig.js
+  echo "  Firefox hardening re-applied"; did=1
+fi
+if [ -d /opt/waterfox ] && [ -f "$S/waterfox/arxos.cfg" ]; then
+  install -Dm644 "$S/waterfox/policies.json" /opt/waterfox/distribution/policies.json 2>/dev/null
+  cp -f "$S/waterfox/arxos.cfg" /opt/waterfox/arxos.cfg
+  install -Dm644 "$S/waterfox/autoconfig.js" /opt/waterfox/defaults/pref/autoconfig.js
+  echo "  Waterfox hardening re-applied"; did=1
+fi
+if [ -f "$S/brave/arxos.json" ]; then
+  install -Dm644 "$S/brave/arxos.json" /etc/brave/policies/managed/arxos.json
+  echo "  Brave policy re-applied"; did=1
+fi
+[ "$did" = 1 ] || { echo "  no supported browser found (Firefox, Waterfox, or Brave)"; exit 1; }
+echo "  Restart any open browser for the policy to take effect."
+HB
+# keep the installed copies of the policy sources in sync for the re-apply script
+install -Dm644 "$HERE/brave/arxos.json" "$SRC/brave/arxos.json"
+
 echo ">> ARXOS browser hardening installed: Firefox super-hardened + Brave debloated (homepage thearxos.oxborn3.com)"
 
 # ---- ARXOS default Firefox theme: Praise the sun (animated) ----
