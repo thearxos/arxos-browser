@@ -43,3 +43,19 @@ if [ -d /home/arxos/.config ]; then
 fi
 
 echo ">> ARXOS browser hardening installed: Firefox super-hardened + Brave debloated (homepage thearxos.oxborn3.com)"
+
+# ---- ARXOS default Firefox theme: Praise the sun (animated) ----
+# Drop the theme XPI into the system distribution extensions so it is active on first run
+# WITHOUT touching or migrating any user profile.
+install_praise_the_sun_theme() {
+  local ffdir themedir xpi="firefox/themes/praise-the-sun-animated.xpi"
+  [ -f "$xpi" ] || return 0
+  for ffdir in /usr/lib/firefox /usr/lib64/firefox /opt/firefox; do
+    [ -d "$ffdir" ] || continue
+    themedir="$ffdir/distribution/extensions"
+    install -d "$themedir"
+    install -m0644 "$xpi" "$themedir/{51fd00e2-c195-4740-824f-c8e789b1c066}.xpi"
+    echo "  installed Praise-the-sun theme -> $themedir"
+  done
+}
+install_praise_the_sun_theme

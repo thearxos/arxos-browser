@@ -31,3 +31,14 @@ sudo ./install.sh
 <div align="center">
 <sub><b>arxos-browser-dist</b> is part of the <b>ArxOS</b> project, built by <b>Stingray Labs</b>.</sub>
 </div>
+
+## Force dark mode
+Every site renders dark: Firefox `layout.css.prefers-color-scheme.content-override=0`
+(overrides RFP's light default), Brave `--enable-features=WebContentsForceDark`. The
+browser chrome is dark with the ArxOS gold accent (userChrome.css).
+
+## Default Firefox theme: Praise the sun (animated)
+Shipped in `firefox/themes/praise-the-sun-animated.xpi`, installed system-wide by
+`install.sh` (no profile migration). Credits:
+- Solaire "Praise the Sun" \_[T]_/ 🌞 — https://www.deviantart.com/zedotagger/art/Dark-Souls-Solaire-537366036
+- Onion knight — https://twitter.com/cyangmou
