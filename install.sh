@@ -34,6 +34,35 @@ When = PostTransaction
 Exec = /usr/lib/arxos/reapply-firefox.sh
 HK
 
+# ---- Waterfox (waterfox-bin: installs to /opt/waterfox; same Mozilla toolkit, same
+# policies.json + autoconfig.js mechanism as Firefox, so it gets the same hardening) ----
+install -Dm644 "$HERE/waterfox/arxos.cfg"     "$SRC/waterfox/arxos.cfg"
+install -Dm644 "$HERE/waterfox/autoconfig.js" "$SRC/waterfox/autoconfig.js"
+if [ -d /opt/waterfox ]; then
+  install -Dm644 "$HERE/waterfox/policies.json" /opt/waterfox/distribution/policies.json
+  cp -f "$SRC/waterfox/arxos.cfg" /opt/waterfox/arxos.cfg
+  install -Dm644 "$SRC/waterfox/autoconfig.js" /opt/waterfox/defaults/pref/autoconfig.js
+fi
+install -Dm755 /dev/stdin /usr/lib/arxos/reapply-waterfox.sh <<'RS'
+#!/bin/bash
+[ -d /opt/waterfox ] || exit 0
+install -Dm644 /usr/share/arxos/browser/waterfox/policies.json /opt/waterfox/distribution/policies.json
+cp -f /usr/share/arxos/browser/waterfox/arxos.cfg /opt/waterfox/arxos.cfg
+install -Dm644 /usr/share/arxos/browser/waterfox/autoconfig.js /opt/waterfox/defaults/pref/autoconfig.js
+RS
+install -Dm644 /dev/stdin /usr/share/libalpm/hooks/arxos-waterfox-harden.hook <<'HK'
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = waterfox-bin
+Target = waterfox
+[Action]
+Description = Reapplying ARXOS Waterfox hardening...
+When = PostTransaction
+Exec = /usr/lib/arxos/reapply-waterfox.sh
+HK
+
 # ---- Brave ----
 install -Dm644 "$HERE/brave/arxos.json" /etc/brave/policies/managed/arxos.json
 install -Dm644 "$HERE/brave/brave-flags.conf" /etc/skel/.config/brave-flags.conf
@@ -50,7 +79,7 @@ echo ">> ARXOS browser hardening installed: Firefox super-hardened + Brave deblo
 install_praise_the_sun_theme() {
   local ffdir themedir xpi="firefox/themes/praise-the-sun-animated.xpi"
   [ -f "$xpi" ] || return 0
-  for ffdir in /usr/lib/firefox /usr/lib64/firefox /opt/firefox; do
+  for ffdir in /usr/lib/firefox /usr/lib64/firefox /opt/firefox /opt/waterfox; do
     [ -d "$ffdir" ] || continue
     themedir="$ffdir/distribution/extensions"
     install -d "$themedir"

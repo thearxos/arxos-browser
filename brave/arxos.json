@@ -1,5 +1,5 @@
 {
-  "_comment": "ARXOS hardened + debloated Brave defaults (global managed policy). Kills Leo AI, Rewards, Wallet, VPN, crypto, news/shopping bloat, and all telemetry; keeps Tor + Shields.",
+  "_comment": "ARXOS hardened + debloated Brave defaults (global managed policy). Kills Leo AI, Rewards, Wallet, VPN, crypto, news/shopping bloat, and all telemetry; keeps Tor + Shields. WebRtcIPHandling=disable_non_proxied_udp and DnsOverHttpsMode=off are load-bearing for anond: anond redirects traffic transparently (nftables), not via Brave's own proxy settings, so WebRTC UDP and Brave's built-in DoH would otherwise bypass anond's Tor routing/DNS pin entirely.",
 
   "BraveRewardsDisabled": true,
   "BraveWalletDisabled": true,
@@ -34,10 +34,10 @@
   "SpellCheckServiceEnabled": false,
 
   "NetworkPredictionOptions": 2,
-  "DnsOverHttpsMode": "secure",
-  "DnsOverHttpsTemplates": "https://dns.quad9.net/dns-query",
+  "DnsOverHttpsMode": "off",
   "HttpsOnlyMode": "force_enabled",
-  "WebRtcIPHandling": "default_public_interface_only",
+  "WebRtcIPHandling": "disable_non_proxied_udp",
+  "UserAgentReduction": 2,
 
   "HomepageLocation": "file:///usr/share/arxos/browser/welcome.html",
   "HomepageIsNewTabPage": false,
