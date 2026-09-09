@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+# arxos-browser-mitm — turn HTTPS interception (Burp Suite / mitmproxy / ZAP) on or off in the
+# hardened ArxOS browsers WITHOUT weakening the default hardening in any way.
+#
+# HOW IT STAYS NON-WEAKENING
+#   It changes NO hardening preference and touches NO policy file. It never enables
+#   security.enterprise_roots (which would trust the whole OS store). It only adds the ONE
+#   intercepting CA you point it at, ONLY into your own browser certificate stores, and `off`
+#   removes it again — restoring a byte-identical hardened trust state. Interception works at all
+#   only because the browsers already ship security.cert_pinning.enforcement_level = 1 (Firefox's
+#   own default), which lets an operator-installed CA validate pinned sites; every anti-fingerprint,
+#   anti-tracking, no-telemetry, and HTTPS-only pref is left exactly as shipped.
+#
+# USAGE
+#   arxos-browser-mitm on   [--cert <file>] [--from-proxy [host:port]]   # trust the CA
+#   arxos-browser-mitm off                                               # remove it (default proxy 127.0.0.1:8080)
+#   arxos-browser-mitm status                                            # where it is trusted
+#
+#   With Burp/ZAP running as a proxy, `on --from-proxy` fetches the CA straight from it.
+#   mitmproxy: `on` auto-uses ~/.mitmproxy/mitmproxy-ca-cert.cer if present. Or pass --cert.
+set -euo pipefail
+
+NICK="ArxOS-MITM"                       # single, well-known nickname so `off` is exact
+TRUST="C,,"                             # trusted CA for TLS server auth only (not code/email)
+DEF_PROXY="127.0.0.1:8080"
+
+# Operate on the real user's stores even when invoked through sudo.
+if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != root ]; then
+    HOME_DIR=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+    AS_USER="$SUDO_USER"
+else
+    HOME_DIR="$HOME"
+    AS_USER="$(id -un)"
+fi
+
+die(){ echo "arxos-browser-mitm: $*" >&2; exit 1; }
+command -v certutil >/dev/null || die "certutil not found (install nss / nss-tools)"
+
+# Every NSS certificate DB that belongs to this user: Firefox + Waterfox profiles, plus the
+# shared Chromium/Brave store. A dir is an NSS store if it holds cert9.db (sql) or cert8.db.
+nss_stores(){
+    local d
+    for d in \
+        "$HOME_DIR"/.mozilla/firefox/*/ \
+        "$HOME_DIR"/.waterfox/*/ \
+        "$HOME_DIR"/.mozilla/waterfox/*/ \
+        "$HOME_DIR"/.pki/nssdb/
+    do
+        [ -e "$d/cert9.db" ] && { echo "sql:$d"; continue; }
+        [ -e "$d/cert8.db" ] && echo "dbm:$d"
+    done
+}
+
+# Normalise whatever the user gives us (PEM or DER) to a DER file certutil will accept.
+to_der(){
+    local src="$1" out="$2"
+    if grep -qa 'BEGIN CERTIFICATE' "$src" 2>/dev/null; then
+        openssl x509 -inform PEM -outform DER -in "$src" -out "$out" 2>/dev/null \
+            || die "could not convert PEM CA '$src' to DER"
+    else
+        cp -f "$src" "$out"          # already DER
+    fi
+}
+
+fetch_from_proxy(){
+    local hp="${1:-$DEF_PROXY}" out="$2"
+    # Burp/ZAP serve their CA (DER) at http://<anything>/cert *through* the proxy.
+    curl -fsS --max-time 10 -x "http://$hp" "http://ca.arxos.invalid/cert" -o "$out" 2>/dev/null && [ -s "$out" ] && return 0
+    curl -fsS --max-time 10 -x "http://$hp" "http://burp/cert"            -o "$out" 2>/dev/null && [ -s "$out" ] && return 0
+    return 1
+}
+
+remove_all(){
+    local found=0 store
+    while read -r store; do
+        [ -z "$store" ] && continue
+        while certutil -L -d "$store" 2>/dev/null | grep -q "^$NICK "; do
+            certutil -D -n "$NICK" -d "$store" 2>/dev/null || break
+            found=1
+        done
+    done < <(nss_stores)
+    return $((1-found))
+}
+
+cmd="${1:-}"; shift || true
+case "$cmd" in
+  on)
+    CERT=""; PROXY=""
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --cert) CERT="${2:?--cert needs a path}"; shift 2;;
+            --from-proxy) PROXY="${2:-$DEF_PROXY}"; case "$PROXY" in --*|"") PROXY="$DEF_PROXY"; shift;; *) shift 2;; esac;;
+            *) die "unknown option $1";;
+        esac
+    done
+    TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+    RAW="$TMP/ca.in"
+    if [ -n "$CERT" ]; then
+        [ -r "$CERT" ] || die "cannot read --cert '$CERT'"; cp -f "$CERT" "$RAW"
+    elif [ -n "$PROXY" ]; then
+        fetch_from_proxy "$PROXY" "$RAW" || die "could not fetch a CA from proxy $PROXY (is Burp/ZAP listening there?)"
+    elif [ -r "$HOME_DIR/.mitmproxy/mitmproxy-ca-cert.cer" ]; then
+        cp -f "$HOME_DIR/.mitmproxy/mitmproxy-ca-cert.cer" "$RAW"
+    else
+        die "give me a CA: --cert <file>, or --from-proxy [host:port] with Burp/ZAP running"
+    fi
+    DER="$TMP/ca.der"; to_der "$RAW" "$DER"
+    # sanity: it must actually be a CA cert
+    openssl x509 -inform DER -in "$DER" -noout -subject >/dev/null 2>&1 || die "that file is not a valid X.509 certificate"
+    n=0
+    while read -r store; do
+        [ -z "$store" ] && continue
+        certutil -D -n "$NICK" -d "$store" 2>/dev/null || true      # idempotent replace
+        if certutil -A -n "$NICK" -t "$TRUST" -i "$DER" -d "$store" 2>/dev/null; then
+            echo "  trusted in $store"; n=$((n+1))
+        fi
+    done < <(nss_stores)
+    [ "$n" -gt 0 ] || die "no browser certificate store found for '$AS_USER' — launch Firefox/Waterfox/Brave once first"
+    echo "interception ENABLED in $n store(s). Point the browser at your proxy; run 'arxos-browser-mitm off' to revert."
+    ;;
+  off)
+    if remove_all; then echo "interception DISABLED — the intercepting CA was removed; hardened trust restored."
+    else echo "nothing to remove (no '$NICK' CA was trusted)."; fi
+    ;;
+  status|"")
+    any=0
+    while read -r store; do
+        [ -z "$store" ] && continue
+        if certutil -L -d "$store" 2>/dev/null | grep -q "^$NICK "; then
+            echo "  ON  $store"; any=1
+        else
+            echo "  off $store"
+        fi
+    done < <(nss_stores)
+    [ "$any" = 1 ] && echo "interception is ACTIVE in the marked store(s)." || echo "interception is OFF everywhere (default hardened state)."
+    ;;
+  *) die "usage: arxos-browser-mitm on [--cert <file>] [--from-proxy [host:port]] | off | status";;
+esac

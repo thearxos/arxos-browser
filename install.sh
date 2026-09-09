@@ -10,6 +10,11 @@ SRC=/usr/share/arxos/browser
 # ---- ARXOS welcome page (local homepage for Firefox + Brave) ----
 install -Dm644 "$HERE/welcome.html" "$SRC/welcome.html"
 
+# arxos-browser-mitm: opt-in Burp/mitmproxy HTTPS interception that adds ONLY the operator's
+# chosen CA to their own browser stores and fully reverts. Changes no hardening pref; the
+# Control Center exposes it under Hardening. cert_pinning=1 (shipped) lets it work on pinned sites.
+install -Dm755 "$HERE/arxos-browser-mitm" /usr/local/bin/arxos-browser-mitm
+
 # ---- Firefox ----
 install -Dm644 "$HERE/firefox/arxos.cfg"     "$SRC/firefox/arxos.cfg"       # persistent source
 install -Dm644 "$HERE/firefox/autoconfig.js" "$SRC/firefox/autoconfig.js"
