@@ -109,8 +109,19 @@ echo ">> ARXOS browser hardening installed: Firefox super-hardened + Brave deblo
 # Drop the theme XPI into the system distribution extensions so it is active on first run
 # WITHOUT touching or migrating any user profile.
 install_praise_the_sun_theme() {
-  local ffdir themedir xpi="firefox/themes/praise-the-sun-animated.xpi"
-  [ -f "$xpi" ] || return 0
+  # $HERE, not a bare relative path: the ISO build runs this as `bash /tmp/abr/install.sh`
+  # through `chroot ... env -i ... bash -c`, which never cd's, so the CWD is / and a relative
+  # "firefox/themes/..." resolved to /firefox/themes/... — it never matched, the guard below
+  # silently returned, and the theme was never installed while arxos.cfg still lockPref'd
+  # extensions.activeThemeID to it (Firefox locked to a missing theme). Every other path in
+  # this script already uses $HERE/$S; this one was the outlier.
+  local ffdir themedir xpi="$HERE/firefox/themes/praise-the-sun-animated.xpi"
+  if [ ! -f "$xpi" ]; then
+    # warn loudly rather than skip silently — the hardening still applies, but the locked
+    # activeThemeID would point at a theme that is not there.
+    echo "  !! theme XPI missing at $xpi — NOT installed (arxos.cfg locks extensions.activeThemeID to it)"
+    return 0
+  fi
   for ffdir in /usr/lib/firefox /usr/lib64/firefox /opt/firefox /opt/waterfox; do
     [ -d "$ffdir" ] || continue
     themedir="$ffdir/distribution/extensions"
